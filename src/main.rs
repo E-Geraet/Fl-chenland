@@ -2,6 +2,21 @@ use rand::Rng;
 use nannou::prelude::*;
 use std::collections::HashMap;
 
+// Helper function to determine greyscale color based on SocialClass
+fn get_class_color(social_class: SocialClass) -> Rgb {
+    // Greyscale color scheme: brightness indicates social hierarchy.
+    // Adheres to the "no color" lore of Flatland.
+    match social_class {
+        SocialClass::Priest => Rgb::new(0.9, 0.9, 0.9),           // Very light grey
+        SocialClass::NobilityHigh => Rgb::new(0.8, 0.8, 0.8),     // Light grey
+        SocialClass::NobilityMid => Rgb::new(0.7, 0.7, 0.7),      // Medium-light grey
+        SocialClass::NobilityLow => Rgb::new(0.6, 0.6, 0.6),      // Medium grey
+        SocialClass::Gentleman => Rgb::new(0.5, 0.5, 0.5),        // Medium-dark grey
+        SocialClass::Craftsman => Rgb::new(0.4, 0.4, 0.4),        // Dark grey
+        SocialClass::SoldierOrWorkman => Rgb::new(0.3, 0.3, 0.3), // Very dark grey
+    }
+}
+
 // Enum for different agent types
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum SocialClass {
@@ -85,10 +100,10 @@ impl Shape {
                 color = get_class_color(*social_class);
                 size = map_range(*sides as f32, 3.0, 12.0, 15.0, 40.0); // Adjusted size range
             }
-            AgentType::Line { length } => {
+            AgentType::Line { length } => { // length here is &mut f32 due to `match &mut agent_type`
                 // Lines (Women) are a very light grey, distinct from Priests.
                 color = Rgb::new(0.95, 0.95, 0.95); 
-                size = length / 2.0;
+                size = *length / 2.0; // Dereference length before division
             }
         }
 
@@ -138,8 +153,14 @@ impl Shape {
             AgentType::Polygon { sides, is_regular, smallest_angle_degrees, .. } => {
                 let points = if sides == 3 && !is_regular && smallest_angle_degrees.is_some() {
                     // Isosceles Triangle Drawing
-                    let alpha_rad = smallest_angle_degrees.unwrap().to_radians(); // Smallest angle
-                    let beta_rad = (PI - 2.0 * alpha_rad) / 1.0; // The third angle (apex if alpha is base)
+                    // let alpha_rad = smallest_angle_degrees.unwrap().to_radians(); // For actual geometric points
+                    // let beta_rad = (PI - 2.0 * alpha_rad) / 1.0; 
+                    // Since the current drawing is simplified and doesn't use alpha_rad/beta_rad, they are effectively unused.
+                    // If a more complex drawing were added, these would be used. For now, keep them commented or remove.
+                    // To satisfy the "prefix if unused" rule based on current drawing:
+                    let _alpha_rad = smallest_angle_degrees.unwrap().to_radians(); 
+                    let _beta_rad = (PI - 2.0 * _alpha_rad) / 1.0;
+
                                                               // This logic assumes alpha is one of the two equal angles.
                                                               // If alpha is the apex, then beta = (PI - alpha_rad)/2.0 are the base angles.
                                                               // For simplicity, let's assume smallest_angle_degrees refers to one of the two equal base angles.
@@ -381,22 +402,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         model.shapes.extend(new_shapes);
     }
 
-// Helper function to determine greyscale color based on SocialClass
-fn get_class_color(social_class: SocialClass) -> Rgb {
-    // Greyscale color scheme: brightness indicates social hierarchy.
-    // Adheres to the "no color" lore of Flatland.
-    match social_class {
-        SocialClass::Priest => Rgb::new(0.9, 0.9, 0.9),           // Very light grey
-        SocialClass::NobilityHigh => Rgb::new(0.8, 0.8, 0.8),     // Light grey
-        SocialClass::NobilityMid => Rgb::new(0.7, 0.7, 0.7),      // Medium-light grey
-        SocialClass::NobilityLow => Rgb::new(0.6, 0.6, 0.6),      // Medium grey
-        SocialClass::Gentleman => Rgb::new(0.5, 0.5, 0.5),        // Medium-dark grey
-        SocialClass::Craftsman => Rgb::new(0.4, 0.4, 0.4),        // Dark grey
-        SocialClass::SoldierOrWorkman => Rgb::new(0.3, 0.3, 0.3), // Very dark grey
-    }
-}
-
-// Begrenzen der Bevölkerung
+    // Begrenzen der Bevölkerung
     while model.shapes.len() > 100 {
         // Entfernen der ältesten Form
         if let Some(oldest_idx) = model.shapes.iter().enumerate()
